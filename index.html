@@ -39,6 +39,10 @@ a{color:var(--wine)}
 .top .sp{flex:1}
 .ibtn{width:40px;height:40px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);display:grid;place-items:center;transition:background .2s,border-color .2s,transform .2s}
 .ibtn:hover{background:var(--olive);border-color:var(--olive);color:#fff}
+.langsw{display:inline-flex;padding:3px;border-radius:999px;background:var(--surface);border:1px solid var(--line-2)}
+.langsw button{border:0;background:none;height:32px;min-width:40px;padding:0 10px;border-radius:999px;font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--ink-3);transition:background .25s,color .25s}
+.langsw button:hover{color:var(--olive)}
+.langsw button.act{background:var(--olive);color:#fff}
 .ibtn svg{width:19px;height:19px}
 .nav{position:fixed;left:0;right:0;bottom:0;height:var(--bot);z-index:20;display:flex;align-items:center;gap:14px;padding:0 clamp(14px,3vw,36px) env(safe-area-inset-bottom);background:linear-gradient(rgba(247,244,235,0),var(--bg) 45%)}
 .prog{flex:1;display:flex;gap:5px;align-items:center;height:40px}
@@ -176,6 +180,7 @@ p{line-height:1.55}
 .on .quote .w{opacity:1;transform:none}
 .quote .hl{color:var(--wine);font-style:italic}
 .nb{white-space:nowrap}
+html[lang=en] #quote{font-size:clamp(30px,4.3vw,62px);max-width:26ch}
 .hint-m{display:none}
 @media (hover:none),(max-width:700px){.hint-d{display:none}.hint-m{display:inline-flex}}
 .route{margin:clamp(26px,4vh,48px) 0 0;padding-bottom:58px;cursor:pointer}
@@ -373,6 +378,7 @@ p{line-height:1.55}
   <a class="brand" href="#/0" aria-label="Wherethru – na začátek"><img src="logo.svg" alt="Wherethru"></a>
   <div class="sec" id="sec">Lean Canvas</div>
   <div class="sp"></div>
+  <div class="langsw" role="group" aria-label="Jazyk prezentace" title="Přepnout jazyk (L)"><button data-ui="cs" lang="cs">CZ</button><button data-ui="en" lang="en">EN</button></div>
   <button class="ibtn" id="ovBtn" title="Přehled snímků (O)" aria-label="Přehled snímků"><svg class="ico" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg></button>
   <button class="ibtn fs" id="fsBtn" title="Celá obrazovka (F)" aria-label="Celá obrazovka"><svg class="ico" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </header>
@@ -718,11 +724,45 @@ p{line-height:1.55}
   const $ = s => document.querySelector(s);
   let cur = -1, lock = false;
 
+  /* ---------- překlad: označení textů (klíč = český obsah) ---------- */
+  const norm = s => s.replace(/\s+/g, ' ').trim();
+  const INLINE = el => ['EM', 'B', 'STRONG', 'BR'].includes(el.tagName) || (el.tagName === 'SPAN' && (el.classList.contains('hl') || el.classList.contains('nb')));
+  const SKIP = 'script,style,svg,[data-l],[data-lang],[data-ui],#sec,#count,#prog,#ovList,#chdet,#target,#net,.prog';
+  const i18nEls = [];
+  (function mark(el) {
+    if (el.matches && el.matches(SKIP)) return;
+    const txt = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim());
+    const kids = [...el.children];
+    if (txt.length && kids.every(INLINE)) { i18nEls.push(el); return; }
+    txt.forEach(n => { const s = document.createElement('span'); n.replaceWith(s); s.textContent = n.textContent; i18nEls.push(s); });
+    kids.forEach(mark);
+  })(document.body);
+  i18nEls.forEach(el => { el._cs = norm(el.innerHTML); const m = el.innerHTML.match(/^(\s*)[\s\S]*?(\s*)$/); el._pre = m[1]; el._post = m[2]; });
+  const EN = {"Lean Canvas · Říjen 2026": "Lean Canvas · October 2026", "Cestování <em>bez nejistoty</em>.": "Travel <em>without uncertainty</em>.", "Digitální platforma pro bezbariérové cestování • Jižní Čechy a Bavorsko": "A digital platform for accessible travel • South Bohemia and Bavaria", "Rozpracovaná verze": "Work in progress", "Spustit prezentaci": "Start the presentation", "listování ·": "navigate ·", "přehled ·": "overview ·", "celá obrazovka": "full screen", "Listuj přejetím prstu do stran": "Swipe left or right to navigate", "Celý model na jedné ploše": "The whole model on one page", "Klikni na libovolné pole a otevři detail. Čísla ukazují pořadí, ve kterém canvas vyplňujeme.": "Click any block to open its detail. The numbers show the order in which the canvas is filled in.", "Problém": "Problem", "Údaje o přístupnosti chybí nebo jsou roztříštěné mezi mapy, weby podniků, dopravce a portály.": "Accessibility data is missing or scattered across maps, business websites, transport operators and portals.", "Řešení": "Solution", "Dvojjazyčná platforma s mapou a filtry podle konkrétních potřeb.": "A bilingual platform with a map and filters for specific needs.", "Indikátory": "Key metrics", "Úplnost a ověření dat, aktivita uživatelů, konverze a partneři.": "Data completeness and verification, user activity, conversion and partners.", "Unikátní nabídka hodnoty": "Unique value proposition", "„Cestování bez nejistoty: vše důležité o přístupnosti na jednom místě.“": "“Travel without uncertainty: everything that matters about accessibility in one place.”", "Neférová výhoda": "Unfair advantage", "Lokální síť partnerů v česko-bavorském příhraničí a jednotná metodika.": "A local partner network in the Czech–Bavarian border region and a unified methodology.", "Cesty k zákazníkům": "Channels", "Web, komunity, partnerské organizace a QR kódy v podnicích.": "Web, communities, partner organisations and QR codes in businesses.", "Zákazníci": "Customer segments", "Lidé na vozíku a s omezenou pohyblivostí, jejich blízcí, podniky a instituce.": "Wheelchair users and people with reduced mobility, their companions, businesses and institutions.", "Struktura nákladů": "Cost structure", "Platforma, sběr a ověřování dat, překlady, komunita, provoz a akce.": "Platform, data collection and verification, translations, community, operations and events.", "Cenový model": "Revenue streams", "Bezplatné jádro, předplatné Plus a Premium, itineráře, akce, B2B a B2G.": "A free core, Plus and Premium subscriptions, itineraries, events, B2B and B2G.", "Informace o přístupnosti jsou <em>roztříštěné</em>.": "Accessibility information is <em>fragmented</em>.", "Nedostatek detailních a spolehlivých údajů o přístupnosti ubytování, gastronomie, atrakcí, veřejných toalet a dopravy.": "There is a lack of detailed and reliable accessibility data on accommodation, restaurants, attractions, public toilets and transport.", "Informace jsou roztříštěné mezi mapami, weby podniků, dopravci a turistickými portály; často chybí fotografie, rozměry a datum ověření.": "Information is scattered across maps, business websites, transport operators and tourist portals; photos, dimensions and the date of verification are often missing.", "Běžné označení „bezbariérové“ nepostihuje individuální potřeby.": "The common “wheelchair accessible” label does not capture individual needs.", "Příprava cesty vyžaduje opakované telefonáty a přináší riziko nepříjemného překvapení.": "Planning a trip takes repeated phone calls and still risks an unpleasant surprise.", "Bezbariérové": "Wheelchair accessible", "✓ označeno": "✓ labelled", "Co to ale znamená pro konkrétního člověka?": "But what does it mean for a particular person?", "Šířka dveří": "Door width", "Sklon rampy": "Ramp gradient", "Sprcha": "Shower", "Madla": "Grab bars", "<b style=\"color:var(--olive)\">Dnešní alternativy</b> – každá řeší jen část potřeb:": "<b style=\"color:var(--olive)\">Today’s alternatives</b> – each covers only part of the needs:", "Weby destinací a podniků": "Destination and business websites", "Pro koho <em>Wherethru</em> je?": "Who is <em>Wherethru</em> for?", "Primární B2C": "Primary B2C", "Lidé na mechanickém či elektrickém vozíku a další osoby s omezenou pohyblivostí.": "People using manual or electric wheelchairs and others with reduced mobility.", "Další B2C": "Other B2C", "Senioři, lidé s dočasným omezením, asistenti, rodiny, doprovod a návštěvníci regionu.": "Seniors, people with temporary impairments, personal assistants, families, companions and visitors to the region.", "Hotely, restaurace, kavárny, atrakce, kulturní zařízení, organizátoři akcí a dostupné dopravní služby.": "Hotels, restaurants, cafés, attractions, cultural venues, event organisers and accessible transport services.", "Instituce": "Institutions", "Obce, turistické oblasti, destinační agentury a regionální partneři.": "Municipalities, tourist regions, destination agencies and regional partners.", "První vlaštovky": "Early adopters", "Aktivní cestovatelé na vozíku; podniky ochotné vyplnit profil a získat zpětnou vazbu.": "Active wheelchair travellers; businesses willing to fill in a profile and get feedback.", "„Cestování <span class=\"nb\"><span class=\"hl\">bez nejistoty</span>:</span> vše důležité o přístupnosti na jednom místě.“": "“Travel <span class=\"nb\"><span class=\"hl\">without uncertainty</span>:</span> everything that matters about accessibility in one place.”", "Parkování nebo zastávka": "Parking or a stop", "Kavárna": "Café", "Toaleta": "Toilet", "Atrakce": "Attraction", "Ubytování": "Accommodation", "<b>Místo + potřeby + trasa</b>Na rozdíl od obecných map propojujeme konkrétní parametry místa s osobními potřebami, turistickou trasou, dopravou a zkušenostmi komunity.": "<b>Place + needs + route</b>Unlike general maps, we connect the specific parameters of a place with personal needs, the tourist route, transport and community experience.", "<b>Základ zůstává zdarma</b>Základní informace o přístupnosti a možnost přispívat do komunity zůstávají zdarma.": "<b>The basics stay free</b>Basic accessibility information and the option to contribute to the community remain free.", "<b>Transparentní data</b>Důraz na transparentní zdroj údajů, fotografické důkazy a poslední kontrolu.": "<b>Transparent data</b>A focus on transparent data sources, photo evidence and the date of the last check.", "Profil místa, který odpoví <em>dřív, než zavoláš</em>.": "A place profile that answers <em>before you call</em>.", "Dvojjazyčná webová platforma s interaktivní mapou a filtry podle konkrétních potřeb uživatele.": "A bilingual web platform with an interactive map and filters for each user’s specific needs.", "Základní vs. ověřené údaje; aktualizace podniky a partnery, zkušenosti, hodnocení a fotografie od uživatelů.": "Basic vs. verified data; updates from businesses and partners, plus experiences, ratings and photos from users.", "Plánování jednodenních a vícedenních cest, ukládání tras, přehled dostupných služeb a dopravy.": "Planning of one-day and multi-day trips, saved routes, an overview of accessible services and transport.", "Později:": "Later:", "Personalizované doporučování": "Personalised recommendations", "Komunitní výlety": "Community trips", "Hotové itineráře": "Ready-made itineraries", "Firemní analytika": "Business analytics", "Šest cest, <em>jeden cíl</em>.": "Six channels, <em>one goal</em>.", "Uživatelé i podniky k nám přicházejí z více směrů. Klikni na kanál v kruhu.": "Users and businesses reach us from several directions. Click a channel in the circle.", "Základ zdarma, <em>víc za předplatné</em>.": "Free basics, <em>more with a subscription</em>.", "Cestovatelé · B2C": "Travellers · B2C", "Zdarma": "Free", "bezplatné jádro": "free core", "předplatné": "subscription", "<b>Bezplatné jádro</b>Vyhledávání míst, základní údaje o přístupnosti, recenze a komunitní příspěvky.": "<b>Free core</b>Place search, basic accessibility data, reviews and community contributions.", "<b>Plus a Premium</b>Personalizované filtry a plánování, uložené či vícedenní itineráře, případně offline podklady a členské výhody.": "<b>Plus and Premium</b>Personalised filters and planning, saved or multi-day itineraries, possibly offline materials and member benefits.", "Jednorázově": "One-off", "Hotové itineráře a individuální plánování cest.": "Ready-made itineraries and individual trip planning.", "Akce": "Events", "Placené workshopy, výlety, komunitní akce a vstupenky.": "Paid workshops, trips, community events and tickets.", "Organizace · B2B a B2G": "Organisations · B2B and B2G", "Rozšířené nástroje pro profily, analytika, ověřování přístupnosti, školení a poradenství.": "Advanced profile tools, analytics, accessibility verification, training and consulting.", "Regionální licence a reporting.": "Regional licences and reporting.", "V budoucnu": "In the future", "Případně provize za zprostředkování.": "Possibly commission on bookings.", "Kam půjdou <em>peníze</em>.": "Where the <em>money</em> goes.", "Platforma": "Platform", "Vývoj a údržba webové platformy, databáze, mapových služeb a hostingu.": "Development and maintenance of the web platform, database, map services and hosting.", "Data a ověřování": "Data and verification", "Sběr, kontrola a aktualizace údajů; metodika přístupnosti a terénní ověřování.": "Collecting, checking and updating data; accessibility methodology and on-site verification.", "Obsah a překlady": "Content and translations", "Překlady do češtiny a němčiny, obsah, fotografie a tvorba itinerářů.": "Czech and German translations, content, photos and itinerary creation.", "Komunita a růst": "Community and growth", "Komunitní moderace, zákaznická podpora, marketing a nábor podniků.": "Community moderation, customer support, marketing and onboarding businesses.", "Provoz": "Operations", "Platební služby, správa předplatného, právní a účetní agenda.": "Payment services, subscription management, legal and accounting.", "Organizace akcí": "Organising events", "Koordinace partnerů, průvodci, přeprava, pojištění a případné personální náklady.": "Partner coordination, guides, transport, insurance and any staff costs.", "Co budeme <em>měřit</em>.": "What we will <em>measure</em>.", "Kvalita dat": "Data quality", "Počet zveřejněných míst, podíl úplných profilů a podíl ověřených záznamů.": "Number of published places, share of complete profiles and share of verified records.", "Stáří informací a počet aktualizací / oprav od podniků a komunity.": "Age of information and number of updates / corrections from businesses and the community.", "Uživatelé a komunita": "Users and community", "Aktivní uživatelé, vyhledávání, uložené trasy a dokončená plánování výletů.": "Active users, searches, saved routes and completed trip plans.", "Počet příspěvků, fotografií a hodnocení od uživatelů.": "Number of contributions, photos and ratings from users.", "Obchod a partneři": "Business and partners", "Konverze z bezplatného tarifu na placený, opakované předplatné a prodeje itinerářů.": "Conversion from the free plan to a paid one, recurring subscriptions and itinerary sales.", "Počet zapojených podniků, B2B smluv a regionálních partnerství.": "Number of participating businesses, B2B contracts and regional partnerships.", "Úplná a ověřená data": "Complete, verified data", "Aktivní uživatelé": "Active users", "Příspěvky komunity": "Community contributions", "Předplatné a partneři": "Subscriptions and partners", "Síť partnerů <em>přes hranici</em>.": "A partner network <em>across the border</em>.", "Možnost budovat lokální síť partnerů v jihočeském a bavorském příhraničí (destinace, obce, podniky, organizace osob s postižením).": "The opportunity to build a local partner network in the South Bohemian and Bavarian border region (destinations, municipalities, businesses, disability organisations).", "Jednotná metodika detailního sběru a ověřování dat, kterou lze postupně rozšiřovat.": "A unified methodology for detailed data collection and verification that can be gradually extended.", "Komunitně doplňované zkušenosti a přeshraniční česko-německé zaměření.": "Community-contributed experiences and a cross-border Czech–German focus.", "Důvěra díky transparentnímu původu a aktuálnosti informací.": "Trust thanks to the transparent origin and up-to-date nature of the information.", "Destinace a obce": "Destinations and municipalities", "Podniky": "Businesses", "Organizace osob s postižením": "Disability organisations", "<b>Poznámka:</b> jde o zamýšlené konkurenční přednosti; exkluzivita partnerství ani obtížná napodobitelnost zatím nebyly doloženy. Síť na obrázku je ilustrační.": "<b>Note:</b> these are intended competitive advantages; exclusive partnerships and difficulty of imitation have not yet been demonstrated. The network shown is illustrative.", "Vše důležité o přístupnosti <em class=\"hl\" style=\"font-style:italic;color:var(--wine)\">na jednom místě</em>.": "Everything that matters about accessibility <em class=\"hl\" style=\"font-style:italic;color:var(--wine)\">in one place</em>.", "Otevřít wherethru.com": "Open wherethru.com", "Zpět na canvas": "Back to the canvas", "Děkujeme za pozornost.": "Thank you for your attention.", "Další": "Next", "Přehled snímků": "Slide overview", "listování": "navigate", "začátek / konec": "first / last", "přehled": "overview", "Úvod": "Intro", "Nabídka hodnoty": "Value proposition", "Závěr": "Closing", "Jižní Čechy": "South Bohemia", "Bavorsko": "Bavaria", "Snímek": "Slide", "snímek": "slide", "Kanál": "Channel", "Předchozí snímek": "Previous slide", "Další snímek": "Next slide", "Přehled snímků (O)": "Slide overview (O)", "Celá obrazovka (F)": "Full screen (F)", "Celá obrazovka": "Full screen", "Zavřít": "Close", "Ovládání prezentace": "Presentation controls", "Wherethru – na začátek": "Wherethru – back to start", "Přepnout jazyk (L)": "Switch language (L)", "Jazyk prezentace": "Presentation language", "Zákaznické segmenty od primárního uprostřed": "Customer segments, primary in the centre", "Ilustrace sítě partnerů v jihočeském a bavorském příhraničí": "Illustration of a partner network in the South Bohemian and Bavarian border region", "Web a vyhledávače": "Web and search engines", "Responzivní web, vyhledávače a obsah zaměřený na konkrétní destinace a přístupné trasy.": "A responsive website, search engines and content focused on specific destinations and accessible routes.", "Sociální sítě": "Social media", "Sociální sítě, doporučení mezi cestovateli a komunity lidí s omezenou mobilitou.": "Social media, word of mouth among travellers and communities of people with reduced mobility.", "Partnerské organizace": "Partner organisations", "Spolupráce s organizacemi osob se zdravotním postižením, turistickými centry, obcemi a destinačními agenturami.": "Cooperation with disability organisations, tourist information centres, municipalities and destination agencies.", "QR kódy v podnicích": "QR codes in businesses", "Odkazy a QR kódy v zapojených podnicích a turistických materiálech.": "Links and QR codes in participating businesses and tourist materials.", "Newslettery a akce": "Newsletters and events", "Newslettery, komunitní akce a doporučení existujících uživatelů.": "Newsletters, community events and referrals from existing users.", "Online prodej": "Online sales", "Přímý online prodej předplatného, itinerářů a služeb.": "Direct online sales of subscriptions, itineraries and services.", "Wherethru · Lean Canvas – interaktivní prezentace": "Wherethru · Lean Canvas – interactive presentation"};
+  let LANG = 'cs';
+  const T = s => LANG === 'en' ? (EN[s] ?? s) : s;
+  const attrEls = [...document.querySelectorAll('[title],[aria-label]')].map(el => ({ el, t: el.getAttribute('title'), a: el.getAttribute('aria-label') }));
+  const onLang = [];
+  function applyLang(l, save) {
+    LANG = l === 'en' ? 'en' : 'cs';
+    document.documentElement.lang = LANG;
+    document.title = T('Wherethru · Lean Canvas – interaktivní prezentace');
+    i18nEls.forEach(el => { const v = T(el._cs); if (norm(el.innerHTML) !== v) el.innerHTML = el._pre + v + el._post; });
+    attrEls.forEach(({ el, t, a }) => { if (t) el.setAttribute('title', T(t)); if (a) el.setAttribute('aria-label', T(a)); });
+    document.querySelectorAll('[data-ui]').forEach(b => { b.classList.toggle('act', b.dataset.ui === LANG); b.setAttribute('aria-pressed', b.dataset.ui === LANG); });
+    onLang.forEach(f => f());
+    if (save) {
+      try { localStorage.setItem('wt-lang', LANG); } catch (e) {}
+      const u = new URL(location.href); u.searchParams.set('lang', LANG); history.replaceState(null, '', u);
+    }
+  }
+  document.addEventListener('click', e => { const b = e.target.closest('[data-ui]'); if (b) { applyLang(b.dataset.ui, true); b.blur(); } });
+
   // pořadí animací
   slides.forEach(s => s.querySelectorAll('[data-a]').forEach((el, i) => el.style.setProperty('--d', i)));
   // slova citátu
   const q = $('#quote');
-  (function splitWords(node){
+  function splitWords(node){
     [...node.childNodes].forEach(ch => {
       if (ch.nodeType === 3) {
         const frag = document.createDocumentFragment();
@@ -734,8 +774,10 @@ p{line-height:1.55}
         node.replaceChild(frag, ch);
       } else if (ch.nodeType === 1) splitWords(ch);
     });
-  })(q);
-  q.querySelectorAll('.w').forEach((w, i) => w.style.transitionDelay = (200 + i * 70) + 'ms');
+  }
+  function splitQuote() { splitWords(q); q.querySelectorAll('.w').forEach((w, i) => w.style.transitionDelay = (200 + i * 70) + 'ms'); }
+  splitQuote();
+  onLang.push(splitQuote);
 
   // progres + přehled
   const prog = $('#prog'), ovList = $('#ovList');
@@ -750,6 +792,17 @@ p{line-height:1.55}
     o.onclick = () => { closeOv(); go(i); };
     ovList.appendChild(o);
   });
+  function paintNav() {
+    slides.forEach((s, i) => {
+      const t = T(s.dataset.t);
+      prog.children[i].setAttribute('aria-label', `${T('Snímek')} ${i + 1}: ${t}`);
+      prog.children[i].firstChild.textContent = t;
+      ovList.children[i].querySelector('b').textContent = t;
+      s.setAttribute('aria-label', t); s.setAttribute('aria-roledescription', T('snímek'));
+    });
+    if (cur >= 0) $('#sec').textContent = cur === 0 ? 'Lean Canvas' : T(slides[cur].dataset.t);
+  }
+  onLang.push(paintNav);
 
   const enter = {}, leave = {};
   function go(i, fromHash) {
@@ -775,7 +828,7 @@ p{line-height:1.55}
     [...prog.children].forEach((b, k) => { b.classList.toggle('cur', k === i); b.classList.toggle('done', k < i); });
     [...ovList.children].forEach((b, k) => b.classList.toggle('cur', k === i));
     $('#count').innerHTML = `<b>${String(i + 1).padStart(2, '0')}</b> / ${String(N).padStart(2, '0')}`;
-    $('#sec').textContent = i === 0 ? 'Lean Canvas' : s.dataset.t;
+    $('#sec').textContent = i === 0 ? 'Lean Canvas' : T(s.dataset.t);
     $('#prev').disabled = i === 0; $('#next').disabled = i === N - 1;
     if (!fromHash) history.replaceState(null, '', '#/' + i);
     bgTarget = i;
@@ -802,6 +855,7 @@ p{line-height:1.55}
     else if (k === 'Home') go(0); else if (k === 'End') go(N - 1);
     else if (k === 'o' || k === 'O') openOv();
     else if (k === 'f' || k === 'F') fs();
+    else if (k === 'l' || k === 'L') applyLang(LANG === 'en' ? 'cs' : 'en', true);
   });
 
   // dotyk
@@ -837,6 +891,10 @@ p{line-height:1.55}
   });
   svg += `</svg>`;
   target.innerHTML = svg;
+  onLang.push(() => {
+    target.querySelectorAll('text').forEach(t => t.textContent = T(labels[+t.dataset.tl]));
+    target.querySelector('svg').setAttribute('aria-label', T('Zákaznické segmenty od primárního uprostřed'));
+  });
   let segAuto = null, segIdx = 0;
   function setSeg(k) {
     segIdx = k;
@@ -869,10 +927,11 @@ p{line-height:1.55}
     d.className = 'stop';
     d.style.left = (p.x / 10) + '%';
     d.style.top = `calc(${p.y / 150 * 100}% - 23px)`; // střed ikony na čáře
-    d.innerHTML = `<div class="ib"><svg class="ico" viewBox="0 0 24 24">${ic}</svg></div>${t}`;
+    d.innerHTML = `<div class="ib"><svg class="ico" viewBox="0 0 24 24">${ic}</svg></div><span class="st">${t}</span>`;
     route.appendChild(d);
     return d;
   });
+  onLang.push(() => stopEls.forEach((d, k) => d.querySelector('.st').textContent = T(stopsDef[k][0])));
   let raf = 0;
   function runRoute() {
     cancelAnimationFrame(raf);
@@ -896,19 +955,22 @@ p{line-height:1.55}
   const prof = $('#prof');
   const TX = {
     cs: { photo: 'Fotografie', title: 'Profil místa', f0: 'Vstup', f1: 'Schody / rampa', f2: 'Výtah', f3: 'Šířka dveří', f4: 'Toaleta', f5: 'Parkování', f6: 'Vybavení pokojů', f7: 'Datum aktualizace', basic: 'Základní údaje', verified: 'Ověřené údaje', src0: 'Zdroj a datum poslední kontroly u každého údaje', src1: 'Ověřeno podle jednotné metodiky · fotografie jako důkaz' },
-    de: { photo: 'Fotos', title: 'Ortsprofil', f0: 'Eingang', f1: 'Stufen / Rampe', f2: 'Aufzug', f3: 'Türbreite', f4: 'Toilette', f5: 'Parkplatz', f6: 'Zimmerausstattung', f7: 'Letzte Aktualisierung', basic: 'Basisdaten', verified: 'Geprüfte Daten', src0: 'Quelle und Datum der letzten Prüfung bei jeder Angabe', src1: 'Nach einheitlicher Methodik geprüft · Fotos als Nachweis' }
+    de: { photo: 'Fotos', title: 'Ortsprofil', f0: 'Eingang', f1: 'Stufen / Rampe', f2: 'Aufzug', f3: 'Türbreite', f4: 'Toilette', f5: 'Parkplatz', f6: 'Zimmerausstattung', f7: 'Letzte Aktualisierung', basic: 'Basisdaten', verified: 'Geprüfte Daten', src0: 'Quelle und Datum der letzten Prüfung bei jeder Angabe', src1: 'Nach einheitlicher Methodik geprüft · Fotos als Nachweis' },
+    en: { photo: 'Photos', title: 'Place profile', f0: 'Entrance', f1: 'Steps / ramp', f2: 'Lift', f3: 'Door width', f4: 'Toilet', f5: 'Parking', f6: 'Room facilities', f7: 'Last updated', basic: 'Basic data', verified: 'Verified data', src0: 'Source and date of the last check for every item', src1: 'Verified using a unified methodology · photos as evidence' }
   };
   let lang = 'cs', ver = 0;
   function paintProf() {
     prof.querySelectorAll('[data-l]').forEach(el => {
       let key = el.dataset.l;
       if (key === 'src0') key = ver ? 'src1' : 'src0';
-      el.textContent = TX[lang][key];
+      el.textContent = TX[lang === 'de' ? 'de' : (LANG === 'en' ? 'en' : 'cs')][key];
     });
+    const lb = prof.querySelector('[data-lang="cs"]'); lb.textContent = LANG === 'en' ? 'EN' : 'CZ';
     prof.classList.toggle('ver', !!ver);
     prof.querySelectorAll('[data-lang]').forEach(b => b.classList.toggle('act', b.dataset.lang === lang));
     prof.querySelectorAll('[data-ver]').forEach(b => b.classList.toggle('act', +b.dataset.ver === ver));
   }
+  onLang.push(paintProf);
   let profT = [];
   prof.addEventListener('click', e => {
     const l = e.target.closest('[data-lang]'), v = e.target.closest('[data-ver]');
@@ -941,7 +1003,7 @@ p{line-height:1.55}
     lines.insertAdjacentHTML('beforeend', `<line class="flow" x1="${x}" y1="${y}" x2="50" y2="50" vector-effect="non-scaling-stroke"/>`);
     const b = document.createElement('button');
     b.className = 'node'; b.style.left = x + '%'; b.style.top = y + '%';
-    b.innerHTML = `<svg class="ico" viewBox="0 0 24 24">${ic}</svg>${t}`;
+    b.innerHTML = `<svg class="ico" viewBox="0 0 24 24">${ic}</svg><span class="nt">${t}</span>`;
     b.onclick = () => { stopCh(); setCh(k); };
     orbit.appendChild(b);
     return b;
@@ -952,10 +1014,11 @@ p{line-height:1.55}
     chIdx = k;
     nodes.forEach((n, j) => n.classList.toggle('act', j === k));
     flows.forEach((f, j) => f.classList.toggle('act', j === k));
-    chdet.innerHTML = `<div class="fade"><div class="k">Kanál ${k + 1} / ${CH.length}</div><h3>${CH[k][0]}</h3><p>${CH[k][1]}</p></div>`;
+    chdet.innerHTML = `<div class="fade"><div class="k">${T('Kanál')} ${k + 1} / ${CH.length}</div><h3>${T(CH[k][0])}</h3><p>${T(CH[k][1])}</p></div>`;
   }
   const stopCh = () => { clearInterval(chAuto); chAuto = null; };
   setCh(0);
+  onLang.push(() => { nodes.forEach((n, k) => n.querySelector('.nt').textContent = T(CH[k][0])); setCh(chIdx); });
   enter[6] = () => { setCh(0); stopCh(); if (!RM) chAuto = setInterval(() => setCh((chIdx + 1) % CH.length), 3400); };
   leave[6] = stopCh;
 
@@ -979,6 +1042,10 @@ p{line-height:1.55}
   P.forEach(([x, y, t], k) => { ns += `<circle class="nd" cx="${x}" cy="${y}" r="${t === 0 ? 13 : 10}" fill="${col[t]}" stroke="#FFFDF8" stroke-width="4" style="transition-delay:${.3 + k * .06}s"/>`; });
   ns += `</svg>`;
   net.innerHTML = ns;
+  onLang.push(() => {
+    const rl = net.querySelectorAll('.rl'); rl[0].textContent = T('Jižní Čechy'); rl[1].textContent = T('Bavorsko');
+    net.querySelector('svg').setAttribute('aria-label', T('Ilustrace sítě partnerů v jihočeském a bavorském příhraničí'));
+  });
 
   /* ---------- pozadí: vrstevnice na plátně ---------- */
   const cv = $('#bg'), cx = cv.getContext('2d');
@@ -1018,6 +1085,9 @@ p{line-height:1.55}
   if (!RM) requestAnimationFrame(loop);
 
   // start
+  let L0 = new URLSearchParams(location.search).get('lang');
+  if (!L0) { try { L0 = localStorage.getItem('wt-lang'); } catch (e) {} }
+  applyLang(L0 || 'cs', false);
   const m = location.hash.match(/#\/(\d+)/);
   go(m ? +m[1] : 0, true);
 })();
